@@ -1,0 +1,23 @@
+n_samples: 10000
+n_features: 6
+n_non_linear: 3
+n_informative: 4
+effective_rank: 3
+random_state: 45
+noise: 0.1
+discretisation_levels:
+  - 2
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+discretisation_strategy: uniform
