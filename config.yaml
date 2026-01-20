@@ -21,3 +21,12 @@ discretisation_levels:
   - 15
   - 16
 discretisation_strategy: uniform
+
+# Mondrian k-anonymity parameters
+mondrian_k_values:
+  - 2
+  - 5
+  - 10
+  - 20
+  - 50
+  - 100
