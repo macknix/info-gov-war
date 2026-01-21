@@ -36,75 +36,81 @@ def eq_class_stats(X_disc):
         'n_eq_classes': n_eq_classes
     }, sizes
 
-def plot_k_anonymity_vs_discretisation(stats_by_bins):
+def plot_k_anonymity_vs_discretisation(stats_by_bins, save_path='k_anonymity_vs_discretisation.png'):
     """
     Given a list of dicts (one per discretisation level) with k-anonymity stats,
     produce summary plots.
+    
+    Parameters
+    ----------
+    stats_by_bins : list of dict
+        Each dict contains k-anonymity stats for a discretisation level
+    save_path : str
+        Path to save the figure
     """
     # Prepare data for plotting
     bins = [s['n_bins'] for s in stats_by_bins]
     k_min = [s['k_min'] for s in stats_by_bins]
     k_median = [s['k_median'] for s in stats_by_bins]
-    mean_size = [s['mean_size'] for s in stats_by_bins]
     frac_eq1 = [s['fraction_k_eq_1'] for s in stats_by_bins] 
-    frac_ge2 = [s['fraction_k_ge_2'] for s in stats_by_bins]
     frac_ge5 = [s['fraction_k_ge_5'] for s in stats_by_bins]
-    frac_ge10 = [s['fraction_k_ge_10'] for s in stats_by_bins]
     discernibility = [s['discernibility'] for s in stats_by_bins]
-    normalised_eq = [s['normalised_eq_class_metric'] for s in stats_by_bins]
+    n_eq_classes = [s['n_eq_classes'] for s in stats_by_bins]
 
-    fig, axes = plt.subplots(2, 3, figsize=(16, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    
+    # Color scheme
+    main_color = '#2ecc71'
+    secondary_color = '#e74c3c'
 
-    # 1) Min / median / mean equivalence class size
-    axes[0, 0].plot(bins, k_median, marker='s', label='k_median')
-    #axes[0, 0].plot(bins, mean_size, marker='^', label='mean_size')
-    axes[0, 0].set_xlabel('Number of bins')
-    axes[0, 0].set_yscale('log')
-    axes[0, 0].set_ylabel('Equivalence class size')
-    axes[0, 0].set_title('Equivalence class sizes vs discretisation')
-    axes[0, 0].legend()
-    axes[0, 0].grid(True, alpha=0.3)
+    # 1) k_min and k_median vs bins
+    ax = axes[0, 0]
+    ax.plot(bins, k_min, marker='o', markersize=8, linewidth=2, 
+            color=secondary_color, label='k_min (privacy level)')
+    ax.plot(bins, k_median, marker='s', markersize=8, linewidth=2, 
+            color=main_color, label='k_median')
+    ax.axhline(y=1, color='gray', linestyle='--', alpha=0.7, label='k=1 (unique)')
+    ax.set_xlabel('Number of bins', fontsize=11)
+    ax.set_ylabel('Equivalence class size', fontsize=11)
+    ax.set_yscale('log')
+    ax.set_title('Equivalence Class Sizes', fontsize=12, fontweight='bold')
+    ax.legend(loc='upper right', fontsize=10)
+    ax.grid(True, alpha=0.3)
 
-    # 2) Fraction with k ≥ 2, 5, 10
-    axes[0, 1].plot(bins, frac_eq1, marker='x', label='k = 1 (singletons)')
-    axes[0, 1].plot(bins, frac_ge2, marker='o', label='k ≥ 2')
-    axes[0, 1].plot(bins, frac_ge5, marker='s', label='k ≥ 5')
-    axes[0, 1].plot(bins, frac_ge10, marker='^', label='k ≥ 10')
-    axes[0, 1].set_ylim(0, 1)
-    axes[0, 1].set_xlabel('Number of bins')
-    axes[0, 1].set_ylabel('Fraction of records')
-    axes[0, 1].set_title('Fraction of records in k‑anonymous equivalence classes')
-    axes[0, 1].legend()
-    axes[0, 1].grid(True, alpha=0.3)
+    # 2) Fraction singletons vs k >= 5
+    ax = axes[0, 1]
+    ax.plot(bins, frac_eq1, marker='x', markersize=10, linewidth=2, 
+            color=secondary_color, label='k=1 (singletons - risky)')
+    ax.plot(bins, frac_ge5, marker='s', markersize=8, linewidth=2, 
+            color=main_color, label='k≥5 (well protected)')
+    ax.fill_between(bins, 0, frac_eq1, alpha=0.2, color=secondary_color)
+    ax.set_ylim(0, 1.05)
+    ax.set_xlabel('Number of bins', fontsize=11)
+    ax.set_ylabel('Fraction of records', fontsize=11)
+    ax.set_title('Record Protection Levels', fontsize=12, fontweight='bold')
+    ax.legend(loc='center right', fontsize=10)
+    ax.grid(True, alpha=0.3)
 
-    # 3) (Optional) direct k_min vs n_bins (emphasised)
-    axes[1, 0].plot(bins, k_min, marker='o', color='C3')
-    axes[1, 0].set_xlabel('Number of bins')
-    axes[1, 0].set_ylabel('k_min')
-    axes[1, 0].set_yscale('log')
-    axes[1, 0].set_title('Minimum k vs discretisation level')
-    axes[1, 0].grid(True, alpha=0.3)
+    # 3) Number of equivalence classes
+    ax = axes[1, 0]
+    ax.plot(bins, n_eq_classes, marker='D', markersize=8, linewidth=2, color='#9b59b6')
+    ax.set_xlabel('Number of bins', fontsize=11)
+    ax.set_ylabel('Number of equivalence classes', fontsize=11)
+    ax.set_yscale('log')
+    ax.set_title('Data Granularity (# of Unique Groups)', fontsize=12, fontweight='bold')
+    ax.grid(True, alpha=0.3)
 
-    # 4) Discernibility metric: sum of squares of equivalence class sizes
-    axes[0, 2].plot(bins, discernibility, marker='D', color='C4')
-    axes[0, 2].set_xlabel('Number of bins')
-    axes[0, 2].set_ylabel('Discernibility metric')
-    axes[0, 2].set_yscale('log')
-    axes[0, 2].set_title('Discernibility metric (Σ|EC|²) vs discretisation')
-    axes[0, 2].grid(True, alpha=0.3)
-
-    # 5) Normalised equivalence class metric: (n_records / n_eq_classes) / k
-    axes[1, 1].plot(bins, normalised_eq, marker='p', color='C5')
-    axes[1, 1].set_xlabel('Number of bins')
-    axes[1, 1].set_ylabel('Normalised EC metric')
-    axes[1, 1].set_title('Normalised EC metric (avg_size / k) vs discretisation')
-    axes[1, 1].grid(True, alpha=0.3)
-
-    # 6) Leave last subplot empty or add any extra stat you want
-    axes[1, 2].axis('off')
+    # 4) Discernibility metric
+    ax = axes[1, 1]
+    ax.plot(bins, discernibility, marker='D', markersize=8, linewidth=2, color='#3498db')
+    ax.set_xlabel('Number of bins', fontsize=11)
+    ax.set_ylabel('Discernibility (Σ|EC|²)', fontsize=11)
+    ax.set_yscale('log')
+    ax.set_title('Discernibility Metric (Lower = Less Utility)', fontsize=12, fontweight='bold')
+    ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig('k_anonymity_vs_discretisation.png', dpi=300, bbox_inches='tight')
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
 
 
@@ -173,111 +179,122 @@ def compare_anonymisation_methods(X, k_values=[2, 5, 10, 20, 50],
     return results
 
 
-def plot_anonymisation_comparison(results):
+def plot_anonymisation_comparison(results, save_path='anonymisation_comparison.png'):
     """
     Plot comparison of discretisation vs Mondrian anonymisation methods.
+    
+    Creates a simple 2x2 grid comparing key metrics between methods.
     
     Parameters
     ----------
     results : dict
         Output from compare_anonymisation_methods()
+    save_path : str
+        Path to save the figure
     """
     disc_stats = results['discretisation']
     mond_stats = results['mondrian']
     
-    fig, axes = plt.subplots(2, 3, figsize=(16, 10))
+    # Check we have data
+    if not disc_stats or not mond_stats:
+        print("Warning: Missing data for one or both methods")
+        return
     
     # Prepare data
     disc_k = [s['k_min'] for s in disc_stats]
     disc_discern = [s['discernibility'] for s in disc_stats]
-    disc_norm_eq = [s['normalised_eq_class_metric'] for s in disc_stats]
     disc_n_eq = [s['n_eq_classes'] for s in disc_stats]
     disc_bins = [s['n_bins'] for s in disc_stats]
     
     mond_k_target = [s['k_target'] for s in mond_stats]
     mond_k_achieved = [s['k_achieved'] for s in mond_stats]
     mond_discern = [s['discernibility'] for s in mond_stats]
-    mond_norm_eq = [s['normalised_eq_class_metric'] for s in mond_stats]
     mond_n_eq = [s['n_eq_classes'] for s in mond_stats]
     mond_ncp = [s['ncp'] for s in mond_stats]
     
-    # 1) k achieved vs parameter (bins for disc, k_target for mondrian)
+    # Colors
+    disc_color = '#2ecc71'  # green
+    mond_color = '#3498db'  # blue
+    
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    
+    # 1) Privacy-Utility Trade-off: Discernibility vs k achieved
     ax = axes[0, 0]
-    ax.plot(disc_bins, disc_k, marker='o', label='Discretisation (k achieved)')
-    ax.plot(mond_k_target, mond_k_achieved, marker='s', label='Mondrian (k achieved)')
-    ax.plot(mond_k_target, mond_k_target, 'k--', alpha=0.5, label='k target')
-    ax.set_xlabel('Bins / k target')
-    ax.set_ylabel('k achieved')
+    ax.scatter(disc_k, disc_discern, marker='o', s=120, c=disc_color, 
+               label='Discretisation', alpha=0.8, edgecolors='black', linewidth=0.5)
+    ax.scatter(mond_k_achieved, mond_discern, marker='s', s=120, c=mond_color, 
+               label='Mondrian', alpha=0.8, edgecolors='black', linewidth=0.5)
+    ax.set_xlabel('k achieved (privacy level)', fontsize=11)
+    ax.set_ylabel('Discernibility (Σ|EC|²)', fontsize=11)
+    ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_title('k-Anonymity Achieved')
-    ax.legend()
+    ax.set_title('Privacy vs Utility Trade-off', fontsize=12, fontweight='bold')
+    ax.legend(loc='best', fontsize=10)
     ax.grid(True, alpha=0.3)
     
-    # 2) Discernibility vs k achieved (both methods on same plot)
+    # 2) k achieved comparison (side by side bars)
     ax = axes[0, 1]
-    ax.scatter(disc_k, disc_discern, marker='o', s=100, label='Discretisation', alpha=0.7)
-    ax.scatter(mond_k_achieved, mond_discern, marker='s', s=100, label='Mondrian', alpha=0.7)
-    ax.set_xlabel('k achieved')
-    ax.set_ylabel('Discernibility (Σ|EC|²)')
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_title('Discernibility vs k-Anonymity')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
+    x_pos = np.arange(len(mond_k_target))
+    bar_width = 0.35
     
-    # 3) Normalised EC metric vs k achieved
-    ax = axes[0, 2]
-    ax.scatter(disc_k, disc_norm_eq, marker='o', s=100, label='Discretisation', alpha=0.7)
-    ax.scatter(mond_k_achieved, mond_norm_eq, marker='s', s=100, label='Mondrian', alpha=0.7)
-    ax.axhline(y=1, color='k', linestyle='--', alpha=0.5, label='Optimal (=1)')
-    ax.set_xlabel('k achieved')
-    ax.set_ylabel('Normalised EC metric (avg_size / k)')
-    ax.set_xscale('log')
-    ax.set_title('Normalised EC Metric vs k-Anonymity')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
+    # For discretisation, show best k achieved at different bin levels
+    ax.bar(x_pos - bar_width/2, mond_k_target, bar_width, 
+           label='Mondrian target k', color=mond_color, alpha=0.6)
+    ax.bar(x_pos + bar_width/2, mond_k_achieved, bar_width, 
+           label='Mondrian achieved k', color=mond_color, alpha=1.0, edgecolor='black', linewidth=0.5)
+    ax.set_xlabel('Configuration', fontsize=11)
+    ax.set_ylabel('k value', fontsize=11)
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels([f'k={k}' for k in mond_k_target], fontsize=9)
+    ax.set_title('Mondrian: Target vs Achieved k', fontsize=12, fontweight='bold')
+    ax.legend(loc='upper left', fontsize=10)
+    ax.grid(True, alpha=0.3, axis='y')
     
-    # 4) Number of equivalence classes vs k
+    # 3) Number of equivalence classes vs k
     ax = axes[1, 0]
-    ax.scatter(disc_k, disc_n_eq, marker='o', s=100, label='Discretisation', alpha=0.7)
-    ax.scatter(mond_k_achieved, mond_n_eq, marker='s', s=100, label='Mondrian', alpha=0.7)
-    ax.set_xlabel('k achieved')
-    ax.set_ylabel('Number of equivalence classes')
+    ax.scatter(disc_k, disc_n_eq, marker='o', s=120, c=disc_color, 
+               label='Discretisation', alpha=0.8, edgecolors='black', linewidth=0.5)
+    ax.scatter(mond_k_achieved, mond_n_eq, marker='s', s=120, c=mond_color, 
+               label='Mondrian', alpha=0.8, edgecolors='black', linewidth=0.5)
+    ax.set_xlabel('k achieved', fontsize=11)
+    ax.set_ylabel('Number of equivalence classes', fontsize=11)
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_title('Number of ECs vs k-Anonymity')
-    ax.legend()
+    ax.set_title('Granularity: ECs vs Privacy Level', fontsize=12, fontweight='bold')
+    ax.legend(loc='best', fontsize=10)
     ax.grid(True, alpha=0.3)
     
-    # 5) Mondrian NCP vs k
+    # 4) Discretisation: k achieved vs bins
     ax = axes[1, 1]
-    ax.plot(mond_k_target, mond_ncp, marker='s', color='C1')
-    ax.set_xlabel('k target')
-    ax.set_ylabel('NCP (%)')
-    ax.set_title('Mondrian: Information Loss (NCP) vs k')
+    ax.plot(disc_bins, disc_k, marker='o', markersize=10, linewidth=2, 
+            color=disc_color, label='k achieved')
+    ax.axhline(y=1, color='red', linestyle='--', alpha=0.7, label='k=1 (no privacy)')
+    ax.fill_between(disc_bins, 1, disc_k, alpha=0.2, color=disc_color)
+    ax.set_xlabel('Number of bins', fontsize=11)
+    ax.set_ylabel('k achieved', fontsize=11)
+    ax.set_yscale('log')
+    ax.set_title('Discretisation: k vs Number of Bins', fontsize=12, fontweight='bold')
+    ax.legend(loc='upper right', fontsize=10)
     ax.grid(True, alpha=0.3)
-    
-    # 6) Summary comparison at similar k levels
-    ax = axes[1, 2]
-    # Find comparable k values
-    text_lines = ["Method Comparison Summary\n"]
-    text_lines.append("-" * 30 + "\n")
-    text_lines.append(f"Discretisation:\n")
-    text_lines.append(f"  k range: {min(disc_k)} - {max(disc_k)}\n")
-    text_lines.append(f"  # ECs: {min(disc_n_eq)} - {max(disc_n_eq)}\n")
-    text_lines.append(f"\nMondrian:\n")
-    text_lines.append(f"  k range: {min(mond_k_achieved)} - {max(mond_k_achieved)}\n")
-    text_lines.append(f"  # ECs: {min(mond_n_eq)} - {max(mond_n_eq)}\n")
-    text_lines.append(f"  NCP range: {min(mond_ncp):.1f}% - {max(mond_ncp):.1f}%\n")
-    text_lines.append(f"\nMondrian guarantees k-anonymity")
-    text_lines.append(f"\nwhile discretisation does not.")
-    ax.text(0.1, 0.9, ''.join(text_lines), transform=ax.transAxes, 
-            fontsize=11, verticalalignment='top', fontfamily='monospace')
-    ax.axis('off')
     
     plt.tight_layout()
-    plt.savefig('anonymisation_comparison.png', dpi=300, bbox_inches='tight')
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
+    
+    # Print summary statistics
+    print("\n" + "="*50)
+    print("ANONYMISATION METHOD COMPARISON SUMMARY")
+    print("="*50)
+    print(f"\nDiscretisation:")
+    print(f"  Bins tested: {disc_bins}")
+    print(f"  k range achieved: {min(disc_k)} - {max(disc_k)}")
+    print(f"  ⚠️  Does NOT guarantee k-anonymity")
+    print(f"\nMondrian:")
+    print(f"  k targets: {mond_k_target}")
+    print(f"  k achieved: {mond_k_achieved}")
+    print(f"  NCP (info loss): {min(mond_ncp):.1f}% - {max(mond_ncp):.1f}%")
+    print(f"  ✓ Guarantees k-anonymity")
+    print("="*50)
 
 if __name__ == "__main__":
     import yaml
@@ -295,15 +312,27 @@ if __name__ == "__main__":
 
     X, y = generate_regression_data(n_samples=n_sample, n_features=n_features, n_informative=n_informative, effective_rank=effective_rank, random_state=random_state, noise=noise, n_non_linear=n_non_linear)
 
-    # Vary discretisation levels
+    # Get config values
     discretisation_levels = config['discretisation_levels']
+    mondrian_k_values = config.get('mondrian_k_values', [2, 5, 10, 20, 50])
+    disc_strategy = config['discretisation_strategy']
 
-    stats_by_bins = []
-    for n_bins in discretisation_levels:
-        Xd = discretise(X, n_bins=n_bins, strategy=config['discretisation_strategy'])
-        stats, sizes = eq_class_stats(Xd)
-        stats['n_bins'] = n_bins
-        stats_by_bins.append(stats)
-        print(f"{n_bins} bins: {stats}")
-
-    plot_k_anonymity_vs_discretisation(stats_by_bins)
+    print("=" * 60)
+    print("ANONYMISATION METHOD COMPARISON")
+    print("=" * 60)
+    
+    # Run comparison
+    results = compare_anonymisation_methods(
+        X, 
+        k_values=mondrian_k_values,
+        discretisation_levels=discretisation_levels,
+        disc_strategy=disc_strategy
+    )
+    
+    # Plot discretisation-only results
+    print("\n--- Discretisation Analysis ---")
+    plot_k_anonymity_vs_discretisation(results['discretisation'])
+    
+    # Plot comparison between methods
+    print("\n--- Method Comparison ---")
+    plot_anonymisation_comparison(results)
