@@ -5,6 +5,16 @@ n_informative: 4
 effective_rank: 3
 random_state: 45
 noise: 0.1
+
+# Categorical feature for minority group representation (e.g., ethnicity)
+include_categorical: true
+n_categorical_classes: 5
+# categorical_weights options:
+#   - 'uniform': equal probability for all classes
+#   - 'minority': first class is majority (50%), rest share remaining 50%
+#   - custom list: e.g., [0.6, 0.2, 0.1, 0.07, 0.03] for explicit weights (must sum to 1.0)
+categorical_weights: [0.6, 0.2, 0.1, 0.07, 0.03]
+
 discretisation_levels:
   - 2
   - 4

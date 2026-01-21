@@ -436,3 +436,52 @@ def mondrian_anonymise(X: np.ndarray, k: int = 5, generalisation: str = 'midpoin
     X_anon = anonymiser.fit_transform(X)
     stats = anonymiser.get_stats()
     return X_anon, stats
+
+
+def anonymise_mondrian(X, k, categorical_col=None, generalisation='midpoint'):
+    """Apply Mondrian k-anonymity to data.
+    
+    Parameters
+    ----------
+    X : np.ndarray of shape (n_samples, n_features)
+        Input data to anonymise.
+    k : int
+        The k parameter for k-anonymity.
+    categorical_col : int or None, default=None
+        If specified, this column index will be excluded from anonymisation
+        and reattached after (useful for preserving categorical features like minority groups).
+    generalisation : str, default='midpoint'
+        How to generalise values within a partition:
+        - 'midpoint': Replace with midpoint of the range
+        - 'mean': Replace with actual mean of values in partition
+        
+    Returns
+    -------
+    X_anon : np.ndarray of shape (n_samples, n_features)
+        Anonymised data.
+    anonymiser : MondrianAnonymiser
+        The fitted anonymiser object (for accessing stats).
+    """
+    anonymiser = MondrianAnonymiser(k=k, generalisation=generalisation)
+    
+    if categorical_col is not None:
+        # Separate categorical column to preserve it
+        if categorical_col == -1:
+            X_features = X[:, :-1]
+            X_categorical = X[:, -1:]
+        else:
+            X_features = np.delete(X, categorical_col, axis=1)
+            X_categorical = X[:, categorical_col:categorical_col+1]
+        
+        # Anonymise only the feature columns
+        X_features_anon = anonymiser.fit_transform(X_features)
+        
+        # Reattach categorical column
+        if categorical_col == -1:
+            X_anon = np.column_stack([X_features_anon, X_categorical])
+        else:
+            X_anon = np.insert(X_features_anon, categorical_col, X_categorical.flatten(), axis=1)
+    else:
+        X_anon = anonymiser.fit_transform(X)
+    
+    return X_anon, anonymiser
