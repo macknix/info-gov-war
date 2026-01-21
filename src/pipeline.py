@@ -1,79 +1,57 @@
-import yaml
-import numpy as np
+"""
+Main Pipeline Entry Point
 
-from .generate import (
-    generate_regression_data,
-    discretise,
-    plot_regression_stats,
-)
-from .k_anonymity import (
-    eq_class_stats,
-    plot_k_anonymity_vs_discretisation,
-)
-from .modelling import (
-    run_regression_experiment,
-    plot_regression_discretisation_results,
-    plot_regression_equity_deciles,
-)
+Run anonymisation pipelines for evaluating privacy-utility trade-offs.
+
+Pipelines available:
+- discretisation: Uses binning/discretisation as anonymisation
+- mondrian: Uses Mondrian k-anonymity algorithm
+
+Usage:
+    python -m src.pipeline                    # Run both pipelines
+    python -m src.pipeline --discretisation   # Run only discretisation
+    python -m src.pipeline --mondrian         # Run only Mondrian
+"""
+
+import argparse
+
+from .pipeline_discretisation import main as run_discretisation_pipeline
+from .pipeline_mondrian import main as run_mondrian_pipeline
 
 
-def main(config_path: str = "config.yaml") -> None:
-    # 1) Load config
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-
-    # Unpack commonly used parameters
-    n_samples = config["n_samples"]
-    n_features = config["n_features"]
-    n_informative = config["n_informative"]
-    effective_rank = config["effective_rank"]
-    random_state = config["random_state"]
-    noise = config["noise"]
-    n_non_linear = config.get("n_non_linear", 0)
-
-    discretisation_levels = config["discretisation_levels"]
-    disc_strategy = config.get("discretisation_strategy", "uniform")
-
-    # 2) Generate base regression data
-    X, y = generate_regression_data(
-        n_samples=n_samples,
-        n_features=n_features,
-        n_informative=n_informative,
-        n_non_linear=n_non_linear,
-        effective_rank=effective_rank,
-        noise=noise,
-        random_state=random_state,
+def main():
+    parser = argparse.ArgumentParser(
+        description="Run anonymisation pipelines for privacy-utility evaluation"
     )
-
-    # 3) Basic data plots (continuous data)
-    print("Plotting raw data statistics...")
-    plot_regression_stats(X, y, n_features,random_state=random_state)
-
-    # 4) k-anonymity vs discretisation
-    print("Computing k-anonymity statistics across discretisation levels...")
-    stats_by_bins = []
-    for n_bins in discretisation_levels:
-        Xd = discretise(X, n_bins=n_bins, strategy=disc_strategy)
-        stats, sizes = eq_class_stats(Xd)
-        stats["n_bins"] = n_bins
-        stats_by_bins.append(stats)
-        print(f"{n_bins} bins: {stats}")
-
-    print("Plotting k-anonymity vs discretisation...")
-    plot_k_anonymity_vs_discretisation(stats_by_bins)
-
-    # 5) Modelling experiment: utility + equity vs discretisation
-    print("Running regression experiment across discretisation levels...")
-    results = run_regression_experiment(
-        X,
-        y,
-        dbins=discretisation_levels,
-        random_state=random_state,
+    parser.add_argument(
+        "--config", 
+        type=str, 
+        default="config.yaml",
+        help="Path to config file (default: config.yaml)"
     )
-
-    print("Plotting regression utility/equity vs discretisation...")
-    plot_regression_discretisation_results(results)
-    plot_regression_equity_deciles(results)
+    parser.add_argument(
+        "--discretisation", 
+        action="store_true",
+        help="Run only the discretisation pipeline"
+    )
+    parser.add_argument(
+        "--mondrian", 
+        action="store_true",
+        help="Run only the Mondrian pipeline"
+    )
+    
+    args = parser.parse_args()
+    
+    # If neither flag is set, run both
+    run_disc = args.discretisation or (not args.discretisation and not args.mondrian)
+    run_mond = args.mondrian or (not args.discretisation and not args.mondrian)
+    
+    if run_disc:
+        run_discretisation_pipeline(args.config)
+        print("\n")
+    
+    if run_mond:
+        run_mondrian_pipeline(args.config)
 
 
 if __name__ == "__main__":
